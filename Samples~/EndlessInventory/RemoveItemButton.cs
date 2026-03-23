@@ -30,12 +30,12 @@ namespace Calluna.Inventory.Samples.EndlessInventory
 
         private void Update()
         {
-            _button.interactable = _slot.Item.HasValue && _container.ItemsAccessor.CanRemove(_slot.Item.Value);
+            _button.interactable = _slot.Item.HasValue && _container.Accessor.CanRemove(_slot.Item.Value);
         }
 
         private void OnRemoveClicked()
         {
-            _container.ItemsAccessor.Remove(_slot.Item.Value);
+            _container.Accessor.Remove(_slot.Item.Value);
         }
     }
 }

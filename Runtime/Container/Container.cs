@@ -5,9 +5,8 @@ namespace Calluna.Inventory
 {
     public class Container : Injectable, Initializable, Cleanable
     {
-        public ItemsAccessor ItemsAccessor { get; private set; }
-        public ReadonlyObservableList<Slot> Slots => _slots;
-        private ObservableList<Slot> _slots;
+        public ContainerAccessor Accessor { get; private set; }
+        public ReadonlyObservableList<Slot> Slots { get; private set; }
 
         public ReadonlyObservableList<Slot> ActiveSlots => _activeSlots;
         private readonly ObservableList<Slot> _activeSlots = new ObservableList<Slot>();
@@ -18,11 +17,11 @@ namespace Calluna.Inventory
         
         void Injectable.Inject(Resolver resolver)
         {
-            _slots = resolver.Resolve<ObservableList<Slot>>();
-            _filter = resolver.Resolve<Filter>();
-            _sorter = resolver.Resolve<Sorter>();
-            _slotsChangeDetector = new ObservableListChangeDetector<Slot>(_slots);
-            ItemsAccessor = resolver.Resolve<ItemsAccessor>();
+            Slots = resolver.Resolve<ReadonlyObservableList<Slot>>();
+            _filter = resolver.ResolveOptional<Filter>();
+            _sorter = resolver.ResolveOptional<Sorter>();
+            _slotsChangeDetector = new ObservableListChangeDetector<Slot>(Slots);
+            Accessor = resolver.Resolve<ContainerAccessor>();
         }
 
         void Initializable.Initialize()
@@ -35,26 +34,26 @@ namespace Calluna.Inventory
 
         void Cleanable.Clean()
         {
-            _filter.Dispose();
-            _sorter.Dispose();
-            _filter.OnChanged -= UpdateActiveSlots;
-            _sorter.OnChanged -= UpdateActiveSlots;
+            if(_filter != null)
+                _filter.OnChanged -= UpdateActiveSlots;
+            if(_sorter != null)
+                _sorter.OnChanged -= UpdateActiveSlots;
             _slotsChangeDetector.OnChanged -= UpdateActiveSlots;
         }
 
         private void UpdateActiveSlots()
         {
-            _activeSlots.OverrideWith(ApplySorting(ApplyFilters(_slots)));
+            _activeSlots.OverrideWith(ApplySorting(ApplyFilters(Slots)));
         }
 
         private IEnumerable<Slot> ApplyFilters(IEnumerable<Slot> slots)
         {
-            return _filter.IsActive.Value ? _filter.ApplyTo(slots) : slots;
+            return _filter != null && _filter.IsActive.Value ? _filter.ApplyTo(slots) : slots;
         }
 
         private IEnumerable<Slot> ApplySorting(IEnumerable<Slot> slots)
         {
-            return _sorter.IsActive ? _sorter.Sort(slots) : slots;
+            return _sorter is { IsActive: true } ? _sorter.Sort(slots) : slots;
         }
     }
 }

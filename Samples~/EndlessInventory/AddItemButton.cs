@@ -46,8 +46,8 @@ namespace Calluna.Inventory.Samples.EndlessInventory
             itemName.Name.Value = _nameInput.text;
             _nameInput.text = string.Empty;
             
-            if(_container.ItemsAccessor.CanAdd(item))
-                _container.ItemsAccessor.Add(item);
+            if(_container.Accessor.CanAdd(item))
+                _container.Accessor.Add(item);
         }
     }
 }

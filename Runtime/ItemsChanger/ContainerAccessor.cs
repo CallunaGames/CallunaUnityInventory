@@ -2,7 +2,7 @@
 
 namespace Calluna.Inventory
 {
-    public abstract class ItemsAccessor : Injectable
+    public abstract class ContainerAccessor : Injectable
     {
         protected ObservableList<Slot> _slots;
         protected SlotProvider _slotProvider;

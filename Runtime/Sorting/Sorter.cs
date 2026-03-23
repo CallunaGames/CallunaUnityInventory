@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Calluna.DI;
 
 namespace Calluna.Inventory
 {
-    public abstract class Sorter : IDisposable
+    public abstract class Sorter : Injectable, Initializable, Cleanable
     {
         public event Action OnChanged;
         public virtual bool IsActive => true;
-        public virtual void Dispose(){}
+        
+        public virtual void Inject(Resolver resolver){}
+        public virtual void Initialize(){}
+        public virtual void Clean(){}
+        
         public abstract IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items);
         public abstract IOrderedEnumerable<Slot> ThenBy(IOrderedEnumerable<Slot> items);
 

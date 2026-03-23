@@ -17,15 +17,11 @@ namespace Calluna.Inventory
             _sorters.AddRange(sorters);
         }
 
-        public override void Dispose()
+        public override void Clean()
         {
-            base.Dispose();
+            base.Clean();
             if(_activeSorterIndex > -1)
                 _sorters[_activeSorterIndex].OnChanged -= InvokeOnChanged;
-            foreach (Sorter sorter in _sorters)
-            {
-                sorter.Dispose();
-            }
         }
 
         public void Activate(Sorter sorter)

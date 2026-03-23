@@ -8,7 +8,7 @@ namespace Calluna.Inventory
 
         public override bool ApplyTo(Item item)
         {
-            return item.TryGetProperty(out ItemName name) && 
+            return item != null && item.TryGetProperty(out ItemName name) && 
                    name.Name.Value.Contains(_filter, StringComparison.OrdinalIgnoreCase);
         }
 

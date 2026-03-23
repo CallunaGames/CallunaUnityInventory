@@ -2,12 +2,12 @@
 
 namespace Calluna.Inventory
 {
-    public class EndlessContainerAccessor : ItemsAccessor
+    public class EndlessContainerAccessor : ContainerAccessor
     {
         public override void Add(Item item)
         {
             Slot slot = _slotProvider.Get();
-            slot.Set(item);
+            slot.Item.Value = item;
             _slots.Add(slot);
         }
 
@@ -27,7 +27,7 @@ namespace Calluna.Inventory
         public override Item this[int index]
         {
             get => _slots[index].Item.Value;
-            set => _slots[index].Set(value);
+            set => _slots[index].Item.Value = value;
         }
     }
 }

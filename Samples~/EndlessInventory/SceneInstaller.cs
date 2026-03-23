@@ -38,7 +38,7 @@ namespace Calluna.Process.Samples.EndlessInventory
             binder.BindToNewSelf<Container>()
                 .AsSingle();
             
-            binder.Bind<ItemsAccessor>()
+            binder.Bind<ContainerAccessor>()
                 .ToNew<EndlessContainerAccessor>()
                 .AsSingle();
             

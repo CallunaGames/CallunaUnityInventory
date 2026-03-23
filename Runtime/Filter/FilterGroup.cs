@@ -18,9 +18,9 @@ namespace Calluna.Inventory
             InitFilters();
         }
 
-        public override void Dispose()
+        public override void Clean()
         {
-            base.Dispose();
+            base.Clean();
             RemoveListeners();
         }
 

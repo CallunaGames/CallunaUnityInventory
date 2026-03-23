@@ -16,14 +16,10 @@ namespace Calluna.Inventory
             InitSorters();
         }
 
-        public override void Dispose()
+        public override void Clean()
         {
-            base.Dispose();
+            base.Clean();
             RemoveListeners();
-            foreach (Sorter sorter in _sorters)
-            {
-                sorter.Dispose();
-            }
         }
 
         public override IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items)
