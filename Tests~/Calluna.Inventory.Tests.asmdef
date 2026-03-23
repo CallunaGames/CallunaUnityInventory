@@ -1,6 +1,6 @@
 {
-    "name": "Calluna.Template.Tests",
-    "rootNamespace": "Calluna.Template.Tests",
+    "name": "Calluna.Inventory.Tests",
+    "rootNamespace": "Calluna.Inventory.Tests",
     "references": [
         "GUID:6e11b6063e739f6468948dab11caf494",
         "GUID:27619889b8ba8c24980f49ee34dbb44a",

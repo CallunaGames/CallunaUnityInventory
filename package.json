@@ -1,20 +1,21 @@
 {
-  "name": "com.calluna.template",
+  "name": "com.calluna.inventory",
   "version": "1.0.0",
-  "displayName": "Calluna Unity Package Template",
-  "description": "Package Description",
+  "displayName": "Calluna Unity Inventory",
+  "description": "A generic Unity inventory system",
   "unity": "6000.33",
   "unityRelease": "",
-  "documentationUrl": "https://github.com/CallunaGames/CallunaUnityTemplate",
-  "changelogUrl": "https://github.com/CallunaGames/CallunaUnityTemplate/commits/v1.0.0",
+  "documentationUrl": "https://github.com/CallunaGames/CallunaUnityInventory",
+  "changelogUrl": "https://github.com/CallunaGames/CallunaUnityInventory/commits/v1.0.0",
   "licensesUrl": "",
   "dependencies": {
+    "com.calluna.core": "https://github.com/CallunaGames/CallunaUnityCore.git#v1.0.18"
   },
   "samples": [
     {
-      "displayName": "Sample Name",
-      "description": "Sample Description",
-      "path": "Samples~/Sample1"
+      "displayName": "Endless Inventory",
+      "description": "A showcase how to setup and use an endless inventory with filters and sorting",
+      "path": "Samples~/EndlessInventory"
     }
   ],
   "keywords": [
