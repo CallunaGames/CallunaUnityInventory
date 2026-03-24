@@ -27,8 +27,10 @@ namespace Calluna.Inventory
         void Initializable.Initialize()
         {
             UpdateActiveSlots();
-            _filter.OnChanged += UpdateActiveSlots;
-            _sorter.OnChanged += UpdateActiveSlots;
+            if(_filter != null)
+                _filter.OnChanged += UpdateActiveSlots;
+            if(_sorter != null)
+                _sorter.OnChanged += UpdateActiveSlots;
             _slotsChangeDetector.OnChanged += UpdateActiveSlots;
         }
 
