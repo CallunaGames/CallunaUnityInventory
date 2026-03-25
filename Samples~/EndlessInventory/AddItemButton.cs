@@ -43,7 +43,7 @@ namespace Calluna.Inventory.Samples.EndlessInventory
             Item item = _resolver.Resolve<Item>();
             if (!item.TryGetProperty(out ItemName itemName))
                 throw new ArgumentException();
-            itemName.Name.Value = _nameInput.text;
+            itemName.Name.Value = _nameInput.text.Trim();
             _nameInput.text = string.Empty;
             
             if(_container.Accessor.CanAdd(item))

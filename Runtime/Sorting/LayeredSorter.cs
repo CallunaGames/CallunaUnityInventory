@@ -9,7 +9,7 @@ namespace Calluna.Inventory
     public class LayeredSorter : Sorter
     {
         private readonly List<Sorter> _sorters = new List<Sorter>();
-        public override bool IsActive => base.IsActive && _sorters.Any();
+        public override bool IsActive => base.IsActive && _sorters.Any() && _sorters.Any(sorter => sorter.IsActive);
 
         public override void Inject(Resolver resolver)
         {
@@ -36,6 +36,8 @@ namespace Calluna.Inventory
             IOrderedEnumerable<Slot> result = null;
             foreach (Sorter sorter in _sorters)
             {
+                if(!sorter.IsActive)
+                    continue;
                 result = result == null ? sorter.Sort(items) : sorter.ThenBy(result);
             }
             return result;
@@ -46,6 +48,8 @@ namespace Calluna.Inventory
             IOrderedEnumerable<Slot> result = items;
             foreach (Sorter sorter in _sorters)
             {
+                if(!sorter.IsActive)
+                    continue;
                 items = sorter.ThenBy(items);
             }
             return result;
