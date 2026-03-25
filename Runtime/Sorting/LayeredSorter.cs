@@ -2,17 +2,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Calluna.DI;
 
 namespace Calluna.Inventory
 {
     public class LayeredSorter : Sorter
     {
-        private List<Sorter> _sorters = new List<Sorter>();
+        private readonly List<Sorter> _sorters = new List<Sorter>();
         public override bool IsActive => base.IsActive && _sorters.Any();
 
-        public LayeredSorter(IEnumerable<Sorter> sorters)
+        public override void Inject(Resolver resolver)
         {
-            _sorters.AddRange(sorters);
+            base.Inject(resolver);
+            IEnumerable<Sorter> sorters = resolver.ResolveOptional<IEnumerable<Sorter>>();
+            if(sorters != null)
+                _sorters.AddRange(sorters);
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
             InitSorters();
         }
 
@@ -45,8 +54,23 @@ namespace Calluna.Inventory
         public void SetSorters(List<Sorter> sorters)
         {
             RemoveListeners();
-            _sorters = sorters;
+            _sorters.Clear();
+            _sorters.AddRange(sorters);
             InitSorters();
+            InvokeOnChanged();
+        }
+
+        public void Add(Sorter sorter)
+        {
+            sorter.OnChanged += InvokeOnChanged;
+            _sorters.Add(sorter);
+            InvokeOnChanged();
+        }
+
+        public void Remove(Sorter sorter)
+        {
+            sorter.OnChanged -= InvokeOnChanged;
+            _sorters.Remove(sorter);
             InvokeOnChanged();
         }
 

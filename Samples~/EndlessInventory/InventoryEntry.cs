@@ -7,6 +7,7 @@ namespace Calluna.Inventory.Samples.EndlessInventory
     public class InventoryEntry : MonoBehaviour, Injectable, Initializable, Cleanable
     {
         [SerializeField] private TextMeshProUGUI _name;
+        [SerializeField] private TextMeshProUGUI _id;
         
         private Slot _slot;
 
@@ -39,6 +40,8 @@ namespace Calluna.Inventory.Samples.EndlessInventory
         {
             item.TryGetProperty(out ItemName itemName);
             _name.text = itemName.Name.Value;
+            item.TryGetProperty(out ItemId id);
+            _id.text ="#" + id.Value;
             itemName.Name.OnChangedWithValues += OnNameChanged;
         }
 
