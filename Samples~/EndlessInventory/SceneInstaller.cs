@@ -29,8 +29,14 @@ namespace Calluna.Inventory.Samples.EndlessInventory
                 .FromMethod(CreateSorter)
                 .AsSingle();
 
+            binder.BindToNewSelf<RadioSorter>()
+                .AsSingle();
+
             binder.BindToNewSelf<LayeredSorter>()
-                .PerRequest();
+                .AsSingle();
+
+            binder.BindToNewSelf<NameCharacterCountSorter>()
+                .AsSingle();
 
             binder.BindToNewSelf<ItemName>()
                 .PerRequest();
@@ -64,7 +70,11 @@ namespace Calluna.Inventory.Samples.EndlessInventory
         private Sorter CreateSorter()
         {
             LayeredSorter layeredSorter = _resolver.Resolve<LayeredSorter>();
-            layeredSorter.Add(_resolver.Resolve<NameSorter>());
+            RadioSorter radioSorter = _resolver.Resolve<RadioSorter>();
+            radioSorter.Add(_resolver.Resolve<NameSorter>());
+            radioSorter.Add(_resolver.Resolve<IdSorter>());
+            radioSorter.Add(_resolver.Resolve<NameCharacterCountSorter>());
+            layeredSorter.Add(radioSorter);
             layeredSorter.Add(_resolver.Resolve<IdSorter>());
             return layeredSorter;
         }
