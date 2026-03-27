@@ -13,14 +13,12 @@ namespace Calluna.Inventory
 
         private Filter _filter;
         private Sorter _sorter;
-        private ObservableListChangeDetector<Slot> _slotsChangeDetector;
         
         void Injectable.Inject(Resolver resolver)
         {
             Slots = resolver.Resolve<ReadonlyObservableList<Slot>>();
             _filter = resolver.ResolveOptional<Filter>();
             _sorter = resolver.ResolveOptional<Sorter>();
-            _slotsChangeDetector = new ObservableListChangeDetector<Slot>(Slots);
             Accessor = resolver.Resolve<ContainerAccessor>();
         }
 
@@ -31,7 +29,9 @@ namespace Calluna.Inventory
                 _filter.OnChanged += UpdateActiveSlots;
             if(_sorter != null)
                 _sorter.OnChanged += UpdateActiveSlots;
-            _slotsChangeDetector.OnChanged += UpdateActiveSlots;
+            Slots.OnItemRemoved += OnSlotRemoved;
+            Slots.OnItemAdded += OnItemAdded;
+            Slots.OnItemReplaced += OnItemReplaced;
         }
 
         void Cleanable.Clean()
@@ -40,7 +40,9 @@ namespace Calluna.Inventory
                 _filter.OnChanged -= UpdateActiveSlots;
             if(_sorter != null)
                 _sorter.OnChanged -= UpdateActiveSlots;
-            _slotsChangeDetector.OnChanged -= UpdateActiveSlots;
+            Slots.OnItemRemoved -= OnSlotRemoved;
+            Slots.OnItemAdded -= OnItemAdded;
+            Slots.OnItemReplaced -= OnItemReplaced;
         }
 
         private void UpdateActiveSlots()
@@ -56,6 +58,25 @@ namespace Calluna.Inventory
         private IEnumerable<Slot> ApplySorting(IEnumerable<Slot> slots)
         {
             return _sorter is { IsActive: true } ? _sorter.Sort(slots) : slots;
+        }
+
+        private void OnSlotRemoved(Slot item, int index)
+        {
+            _activeSlots.Remove(item);
+        }
+
+        private void OnItemAdded(Slot slot, int index)
+        {
+            if(_filter.IsActive.Value && !_filter.ApplyTo(slot.Item.Value))
+                return;
+            _activeSlots.Add(slot);
+            _activeSlots.OverrideWith(ApplySorting(ActiveSlots));
+        }
+
+        private void OnItemReplaced(Slot newitem, Slot formeritem, int index)
+        {
+            OnSlotRemoved(formeritem, index);
+            OnItemAdded(newitem, index);
         }
     }
 }
