@@ -46,6 +46,9 @@ namespace Calluna.Inventory.Samples.EndlessInventory
                 .WithoutInjection()
                 .PerRequest();
             
+            binder.BindToNewSelf<ContainerChangedSignal>()
+                .AsSingle();
+
             binder.Bind<ObservableList<Slot>>()
                 .And<ReadonlyObservableList<Slot>>()
                 .ToNew<ObservableList<Slot>>()

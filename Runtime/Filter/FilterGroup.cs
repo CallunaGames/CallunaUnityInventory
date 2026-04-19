@@ -38,7 +38,7 @@ namespace Calluna.Inventory
 
         public void Remove(Filter filter)
         {
-            _filters.Add(filter);
+            _filters.Remove(filter);
             RemoveListener(filter);
             InvokeOnChanged();
         }

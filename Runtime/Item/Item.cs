@@ -1,12 +1,21 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using Calluna.DI;
 
 namespace Calluna.Inventory
 {
-    public class Item
+    public class Item : Injectable
     {
-        private Dictionary<Type, ItemProperty> _properties = new Dictionary<Type, ItemProperty>();
-        
+        private readonly Dictionary<Type, ItemProperty> _properties = new Dictionary<Type, ItemProperty>();
+        private ContainerChangedSignal _signal;
+
+        void Injectable.Inject(Resolver resolver)
+        {
+            _signal = resolver.ResolveOptional<ContainerChangedSignal>();
+            foreach (ItemProperty property in _properties.Values)
+                property.SetSignal(_signal);
+        }
+
         public bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ItemProperty
         {
             if (!_properties.TryGetValue(typeof(TProperty), out ItemProperty value))
@@ -21,14 +30,19 @@ namespace Calluna.Inventory
         public void Add<TProperty>(TProperty property) where TProperty : ItemProperty
         {
             Type type = typeof(TProperty);
-            if(_properties.ContainsKey(type))
+            if (_properties.ContainsKey(type))
                 throw new Exception($"Property {type.FullName} is already added");
-            _properties.Add(typeof(TProperty), property);
+            property.SetSignal(_signal);
+            _properties.Add(type, property);
         }
 
         public void Remove<TProperty>() where TProperty : ItemProperty
         {
-            _properties.Remove(typeof(TProperty));
+            if (_properties.TryGetValue(typeof(TProperty), out ItemProperty property))
+            {
+                property.SetSignal(null);
+                _properties.Remove(typeof(TProperty));
+            }
         }
     }
 }

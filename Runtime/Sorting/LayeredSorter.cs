@@ -50,7 +50,7 @@ namespace Calluna.Inventory
             {
                 if(!sorter.IsActive)
                     continue;
-                items = sorter.ThenBy(items);
+                result = sorter.ThenBy(result);
             }
             return result;
         }

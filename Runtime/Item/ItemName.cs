@@ -1,9 +1,19 @@
-﻿using System;
+using Calluna.DI;
 
 namespace Calluna.Inventory
 {
-    public class ItemName : ItemProperty
+    public class ItemName : ItemProperty, Initializable, Cleanable
     {
-        public Observable<string> Name { get; private set; } = new Observable<string>();
+        public Observable<string> Name { get; } = new Observable<string>();
+
+        void Initializable.Initialize()
+        {
+            Name.OnChanged += NotifyChanged;
+        }
+
+        void Cleanable.Clean()
+        {
+            Name.OnChanged -= NotifyChanged;
+        }
     }
 }

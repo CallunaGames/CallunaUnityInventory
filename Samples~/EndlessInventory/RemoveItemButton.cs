@@ -1,4 +1,3 @@
-using System;
 using Calluna.DI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,21 +20,29 @@ namespace Calluna.Inventory.Samples.EndlessInventory
         public void Initialize()
         {
             _button.onClick.AddListener(OnRemoveClicked);
+            _slot.Item.OnChanged += OnSlotItemChanged;
+            UpdateInteractable();
         }
 
         public void Clean()
         {
             _button.onClick.RemoveListener(OnRemoveClicked);
+            _slot.Item.OnChanged -= OnSlotItemChanged;
         }
 
-        private void Update()
+        private void OnSlotItemChanged()
         {
-            _button.interactable = _slot.Item.HasValue && _container.Accessor.CanRemove(_slot.Item.Value);
+            UpdateInteractable();
+        }
+
+        private void UpdateInteractable()
+        {
+            _button.interactable = _slot.Item.HasValue && _container.CanRemove(_slot.Item.Value);
         }
 
         private void OnRemoveClicked()
         {
-            _container.Accessor.Remove(_slot.Item.Value);
+            _container.Remove(_slot.Item.Value);
         }
     }
 }
