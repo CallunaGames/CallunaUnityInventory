@@ -2,13 +2,13 @@
 
 namespace Calluna.Inventory.Samples.EndlessInventory
 {
-    public class ItemId : ItemProperty, Injectable
+    public class ItemId : ItemProperty
     {
         public int Value { get; private set; }
-        
-        public void Inject(Resolver resolver)
+
+        public ItemId(int id)
         {
-            Value = resolver.Resolve<int>();
+            Value = id;
         }
     }
 }
