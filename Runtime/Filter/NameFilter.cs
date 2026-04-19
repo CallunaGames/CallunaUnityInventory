@@ -4,17 +4,17 @@ namespace Calluna.Inventory
 {
     public class NameFilter : Filter
     {
-        private string _filter;
+        private string _searchText;
 
         public override bool ApplyTo(Item item)
         {
-            return item != null && item.TryGetProperty(out ItemName name) && 
-                   name.Name.Value.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+            return item != null && item.TryGetProperty(out ItemName name) &&
+                   name.Name.Value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
         }
 
-        public void SetFilterString(string filter)
+        public void SetSearchText(string searchText)
         {
-            _filter = filter;
+            _searchText = searchText;
             InvokeOnChanged();
         }
     }

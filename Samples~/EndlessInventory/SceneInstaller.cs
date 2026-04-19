@@ -92,10 +92,7 @@ namespace Calluna.Inventory.Samples.EndlessInventory
 
         private ItemId CreateItemId()
         {
-            ItemId itemId = new ItemId();
-            ArgumentsResolver resolver = new ArgumentsResolver(_resolver);
-            resolver.AddArgument(_id);
-            itemId.Inject(resolver);
+            ItemId itemId = new ItemId(_id);
             _id++;
             return itemId;
         }

@@ -6,6 +6,6 @@ namespace Calluna.Inventory
 
         internal void SetSignal(ContainerChangedSignal signal) => _signal = signal;
 
-        protected void NotifyChanged() => _signal?.Invoke();
+        protected virtual void NotifyChanged() => _signal?.Invoke();
     }
 }

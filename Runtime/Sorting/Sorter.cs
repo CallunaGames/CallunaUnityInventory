@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Calluna.DI;
@@ -9,15 +9,15 @@ namespace Calluna.Inventory
     {
         public event Action OnChanged;
         public virtual bool IsActive => true;
-        
+
         public virtual void Inject(Resolver resolver){}
         public virtual void Initialize(){}
         public virtual void Clean(){}
-        
-        public abstract IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items);
-        public abstract IOrderedEnumerable<Slot> ThenBy(IOrderedEnumerable<Slot> items);
 
-        protected void InvokeOnChanged() => OnChanged?.Invoke();
+        public abstract IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items);
+        public virtual IOrderedEnumerable<Slot> ThenBy(IOrderedEnumerable<Slot> items) => items;
+
+        protected virtual void InvokeOnChanged() => OnChanged?.Invoke();
     }
 
     public abstract class Sorter<TKey> : Sorter

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Calluna.DI;
@@ -8,10 +7,13 @@ namespace Calluna.Inventory
 {
     public class RadioSorter : Sorter
     {
+        // Sentinel value meaning no sorter is currently selected.
+        private const int NoActiveSorter = -1;
+
         private readonly List<Sorter> _sorters = new List<Sorter>();
         public override bool IsActive => base.IsActive && _sorters.Any() && _activeSorterIndex >= 0;
 
-        private int _activeSorterIndex = -1;
+        private int _activeSorterIndex = NoActiveSorter;
 
         public override void Inject(Resolver resolver)
         {
@@ -24,7 +26,7 @@ namespace Calluna.Inventory
         public override void Clean()
         {
             base.Clean();
-            CleanCurrent();
+            UnsubscribeActive();
         }
 
         public void Activate(Sorter sorter)
@@ -32,13 +34,13 @@ namespace Calluna.Inventory
             int index = _sorters.IndexOf(sorter);
             if(index < 0)
                 throw new Exception($"Sorter {sorter} is not part of this {nameof(RadioSorter)}");
-            CleanCurrent();
+            UnsubscribeActive();
             _activeSorterIndex = index;
             _sorters[_activeSorterIndex].OnChanged += InvokeOnChanged;
             InvokeOnChanged();
         }
 
-        private void CleanCurrent()
+        private void UnsubscribeActive()
         {
             if(_activeSorterIndex < 0)
                 return;
@@ -47,8 +49,7 @@ namespace Calluna.Inventory
 
         public void Deactivate()
         {
-            CleanCurrent();
-            _activeSorterIndex = -1;
+            DeactivateSilently();
             InvokeOnChanged();
         }
 
@@ -64,9 +65,14 @@ namespace Calluna.Inventory
             int index = _sorters.IndexOf(sorter);
             if(index < 0)
                 throw new Exception($"Sorter {sorter} is not part of this {nameof(RadioSorter)}");
+            bool isActiveSorter = _activeSorterIndex == index;
+            if(isActiveSorter)
+                DeactivateSilently();
+            else if (_activeSorterIndex > index)
+                _activeSorterIndex--;
             _sorters.RemoveAt(index);
-            if(_activeSorterIndex == index)
-                Deactivate();
+            if (isActiveSorter)
+                InvokeOnChanged();
         }
 
         public override IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items)
@@ -77,6 +83,12 @@ namespace Calluna.Inventory
         public override IOrderedEnumerable<Slot> ThenBy(IOrderedEnumerable<Slot> items)
         {
             return _sorters[_activeSorterIndex].ThenBy(items);
+        }
+
+        private void DeactivateSilently()
+        {
+            UnsubscribeActive();
+            _activeSorterIndex = NoActiveSorter;
         }
     }
 }

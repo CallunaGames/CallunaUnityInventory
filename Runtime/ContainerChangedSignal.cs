@@ -6,6 +6,6 @@ namespace Calluna.Inventory
     {
         public event Action OnChanged;
 
-        public void Invoke() => OnChanged?.Invoke();
+        internal void Invoke() => OnChanged?.Invoke();
     }
 }

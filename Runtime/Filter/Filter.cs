@@ -14,18 +14,15 @@ namespace Calluna.Inventory
         public virtual void Initialize(){}
         public virtual void Clean(){}
 
-        public IEnumerable<Slot> ApplyTo(IEnumerable<Slot> items)
+        internal IEnumerable<Slot> ApplyTo(IEnumerable<Slot> slots)
         {
             if (!IsActive.Value)
-                return items;
-            return items.Where(slot => ApplyTo(slot.Item.Value));
+                return slots;
+            return slots.Where(slot => ApplyTo(slot.Item.Value));
         }
 
         public abstract bool ApplyTo(Item item);
 
-        protected void InvokeOnChanged()
-        {
-            OnChanged?.Invoke();
-        }
+        protected virtual void InvokeOnChanged() => OnChanged?.Invoke();
     }
 }

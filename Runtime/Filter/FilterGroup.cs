@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,13 +14,18 @@ namespace Calluna.Inventory
         public FilterGroup(IEnumerable<Filter> filters)
         {
             _filters.AddRange(filters);
-            InitFilters();
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
+            SubscribeAll();
         }
 
         public override void Clean()
         {
             base.Clean();
-            RemoveListeners();
+            UnsubscribeAll();
         }
 
         public override bool ApplyTo(Item item)
@@ -43,7 +47,7 @@ namespace Calluna.Inventory
             InvokeOnChanged();
         }
 
-        private void InitFilters()
+        private void SubscribeAll()
         {
             foreach (Filter filter in _filters)
             {
@@ -51,7 +55,7 @@ namespace Calluna.Inventory
             }
         }
 
-        private void RemoveListeners()
+        private void UnsubscribeAll()
         {
             foreach (Filter filter in _filters)
             {

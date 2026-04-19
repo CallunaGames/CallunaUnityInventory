@@ -2,9 +2,11 @@
     "name": "Calluna.Inventory.Tests",
     "rootNamespace": "Calluna.Inventory.Tests",
     "references": [
-        "GUID:6e11b6063e739f6468948dab11caf494",
         "GUID:27619889b8ba8c24980f49ee34dbb44a",
-        "GUID:0acc523941302664db1f4e527237feb3"
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:a4e2fcc097ca52d46a2cc62ef3c5e9bf",
+        "GUID:fb92ad7c22f767448a052126eb8fa706",
+        "GUID:00ff67421471be04188544e9f71ad99c"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

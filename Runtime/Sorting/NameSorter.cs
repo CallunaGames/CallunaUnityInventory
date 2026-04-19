@@ -1,14 +1,11 @@
-﻿using System;
-
-namespace Calluna.Inventory
+﻿namespace Calluna.Inventory
 {
     public class NameSorter : Sorter<string>
     {
-        protected override string GetKey(Slot slot)
-        {
-            if (!slot.Item.HasValue || !slot.Item.Value.TryGetProperty(out ItemName name))
-                return string.Empty;
-            return name.Name.Value;
-        }
+        // Empty slots or items without a name sort before all named items.
+        protected override string GetKey(Slot slot) =>
+            slot.Item.HasValue && slot.Item.Value.TryGetProperty(out ItemName name)
+                ? name.Name.Value
+                : string.Empty;
     }
 }

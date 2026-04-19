@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Calluna.DI;
 
@@ -9,7 +7,19 @@ namespace Calluna.Inventory
     public class LayeredSorter : Sorter
     {
         private readonly List<Sorter> _sorters = new List<Sorter>();
-        public override bool IsActive => base.IsActive && _sorters.Any() && _sorters.Any(sorter => sorter.IsActive);
+        public override bool IsActive => GetIsActive();
+
+        private bool GetIsActive()
+        {
+            if (!base.IsActive || _sorters.Count == 0)
+                return false;
+            for (int i = 0; i < _sorters.Count; i++)
+            {
+                if (_sorters[i].IsActive)
+                    return true;
+            }
+            return false;
+        }
 
         public override void Inject(Resolver resolver)
         {
@@ -22,13 +32,13 @@ namespace Calluna.Inventory
         public override void Initialize()
         {
             base.Initialize();
-            InitSorters();
+            SubscribeAll();
         }
 
         public override void Clean()
         {
             base.Clean();
-            RemoveListeners();
+            UnsubscribeAll();
         }
 
         public override IOrderedEnumerable<Slot> Sort(IEnumerable<Slot> items)
@@ -57,10 +67,10 @@ namespace Calluna.Inventory
 
         public void SetSorters(List<Sorter> sorters)
         {
-            RemoveListeners();
+            UnsubscribeAll();
             _sorters.Clear();
             _sorters.AddRange(sorters);
-            InitSorters();
+            SubscribeAll();
             InvokeOnChanged();
         }
 
@@ -78,7 +88,7 @@ namespace Calluna.Inventory
             InvokeOnChanged();
         }
 
-        private void InitSorters()
+        private void SubscribeAll()
         {
             foreach (Sorter sorter in _sorters)
             {
@@ -86,7 +96,7 @@ namespace Calluna.Inventory
             }
         }
 
-        private void RemoveListeners()
+        private void UnsubscribeAll()
         {
             foreach (Sorter sorter in _sorters)
             {

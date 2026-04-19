@@ -29,7 +29,7 @@ namespace Calluna.Inventory.Samples.EndlessInventory
         private void OnSubmit(string value)
         {
             _filter.IsActive.Value = !string.IsNullOrEmpty(value);
-            _filter.SetFilterString(value);
+            _filter.SetSearchText(value);
         }
     }
 }

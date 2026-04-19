@@ -18,13 +18,9 @@ namespace Calluna.Inventory
 
         public bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ItemProperty
         {
-            if (!_properties.TryGetValue(typeof(TProperty), out ItemProperty value))
-            {
-                property = null;
-                return false;
-            }
-            property = (TProperty)value;
-            return true;
+            bool found = _properties.TryGetValue(typeof(TProperty), out ItemProperty rawProperty);
+            property = found ? (TProperty)rawProperty : null;
+            return found;
         }
 
         public void Add<TProperty>(TProperty property) where TProperty : ItemProperty
