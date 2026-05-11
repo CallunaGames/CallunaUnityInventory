@@ -69,6 +69,8 @@ public class ItemAmount : ItemProperty, Initializable, Cleanable
 
 `ActiveSlots` is rebuilt whenever `Filter.OnChanged`, `Sorter.OnChanged`, `ContainerChangedSignal.OnChanged`, or the raw `Slots` list changes.
 
+When `Filter.OnChanged` or `Sorter.OnChanged` fires, the rebuild is routed through `ScheduleActiveSlotsUpdate`. If an `UpdateScheduler` (from `com.calluna.core`) is injected, the rebuild is deferred to end-of-frame via `UpdateScheduler.ScheduleOnce`. Multiple filter or sorter changes within the same frame are therefore collapsed into a single `ActiveSlots` rebuild. If no `UpdateScheduler` is bound, the rebuild happens immediately and synchronously, preserving the original behaviour.
+
 **Usage**
 
 ```csharp
@@ -256,6 +258,11 @@ binder.Bind<SlotProvider>().ToNew<SlotCreator>().AsSingle();
 // Optional — reactive in-place mutations
 binder.BindToNewSelf<ContainerChangedSignal>().AsSingle();
 
+// Optional — defer filter/sorter-triggered rebuilds to end-of-frame,
+// batching multiple changes in one frame into a single ActiveSlots rebuild.
+// UpdateScheduler is a MonoBehaviour; attach it to a GameObject and bind the instance.
+binder.BindToSelf<UpdateScheduler>().FromInstance(updateSchedulerInstance).AsSingle();
+
 // Optional — filtering
 binder.Bind<Filter>().And<NameFilter>().ToNew<NameFilter>().AsSingle();
 
@@ -282,4 +289,4 @@ binder.Bind<Sorter>().ToNew<RadioSorter>().AsSingle();
 
 ### Endless Inventory
 
-Demonstrates a complete inventory setup with a `NameFilter` for live search and a `NameSorter` wired through a `LayeredSorter`. Import via **Package Manager > Calluna Unity Inventory > Samples > Endless Inventory**.
+Demonstrates a complete inventory setup with a `NameFilter` for live search and a `RadioSorter` wired inside a `LayeredSorter` for sorting. The `RadioSorter` provides mutually exclusive toggle behaviour across three child sorters — `NameSorter`, `IdSorter`, and `NameCharacterCountSorter` — so only one sort key is active at a time. Import via **Package Manager > Calluna Unity Inventory > Samples > Endless Inventory**.

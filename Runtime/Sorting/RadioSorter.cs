@@ -11,7 +11,7 @@ namespace Calluna.Inventory
         private const int NoActiveSorter = -1;
 
         private readonly List<Sorter> _sorters = new List<Sorter>();
-        public override bool IsActive => base.IsActive && _sorters.Any() && _activeSorterIndex >= 0;
+        public override bool IsActive => base.IsActive && _sorters.Count > 0 && _activeSorterIndex >= 0;
 
         private int _activeSorterIndex = NoActiveSorter;
 

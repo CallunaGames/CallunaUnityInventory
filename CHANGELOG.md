@@ -1,3 +1,10 @@
+## [1.1.1] - 2026-05-11
+
+### Performance
+- `Container` now optionally accepts an `UpdateScheduler` (from `com.calluna.core`). When present, filter- or sorter-triggered `ActiveSlots` rebuilds are deferred to end-of-frame, so multiple filter/sorter changes within the same frame produce only one rebuild instead of one per change.
+- `Container` caches the `UpdateActiveSlots` delegate once at initialisation, eliminating a delegate allocation on every scheduled rebuild call.
+- `RadioSorter.IsActive` now checks `_sorters.Count > 0` instead of `_sorters.Any()`, removing a LINQ allocation on every read of this hot-path property.
+
 ## [1.1.0] - 2026-04-19
 
 ### Breaking Changes
