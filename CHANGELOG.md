@@ -1,3 +1,16 @@
+## [1.1.2] - 2026-05-13
+
+### Fixed
+- `EntryCreator` sample was subscribing to `ActiveSlots.OnItemAdded`, `OnItemRemoved`, and `OnItemReplaced` — events that never fire because all slot updates go through `OverrideWith`. Replaced with a single `OnContentsReplaced` handler.
+- README Container usage example had the same dead-code subscription pattern; updated to use `OnContentsReplaced`.
+
+### Changed
+- README: removed `ItemAmount` from the built-in property types list (it does not exist in the package).
+- README: added the missing `ObservableList<Slot>` DI binding to the wiring example.
+- README: documented that `LayeredSorter` and `RadioSorter` resolve their child sorters at inject time.
+- README: clarified that `ItemProperty` optional lifecycle interfaces (`Injectable`, `Initializable`, `Cleanable`) are opt-in.
+- README: noted that `NotifyChanged` is `protected virtual`.
+
 ## [1.1.1] - 2026-05-11
 
 ### Performance

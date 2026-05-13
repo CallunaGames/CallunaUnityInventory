@@ -11,8 +11,8 @@ A generic, DI-aware inventory system for Unity. Items are property bags; filteri
 ```
 Item : Injectable
 └─ Dictionary<Type, ItemProperty>
-   ├─ ItemName  : ItemProperty, Initializable, Cleanable
-   └─ (custom properties...)
+   ├─ ItemName        : ItemProperty, Initializable, Cleanable  (built-in)
+   └─ (your custom ItemProperty subclasses...)
 ```
 
 **Usage**
@@ -32,7 +32,7 @@ item.Remove<ItemName>();
 
 ### ItemProperty
 
-`ItemProperty` is the abstract base for all item data. Subclass it to add custom data. Call `NotifyChanged()` inside your subclass whenever a value changes so the container's `ActiveSlots` stays up to date.
+`ItemProperty` is the abstract base for all item data. Subclass it to add custom data. Call `NotifyChanged()` inside your subclass whenever a value changes so the container's `ActiveSlots` stays up to date. `NotifyChanged()` is `protected virtual`.
 
 ```csharp
 public class ItemAmount : ItemProperty, Initializable, Cleanable
@@ -43,6 +43,8 @@ public class ItemAmount : ItemProperty, Initializable, Cleanable
     void Cleanable.Clean()          => Amount.OnChanged -= NotifyChanged;
 }
 ```
+
+`Initializable` and `Cleanable` are optional on custom properties — implement them only when you need to subscribe/unsubscribe observables or perform setup and teardown.
 
 ### ItemName
 
@@ -74,10 +76,16 @@ When `Filter.OnChanged` or `Sorter.OnChanged` fires, the rebuild is routed throu
 **Usage**
 
 ```csharp
-// Expose the readonly view to UI code
+// Expose the readonly view to UI code.
+// ActiveSlots is rebuilt via OverrideWith, which fires OnContentsReplaced once
+// rather than per-item events. React to OnContentsReplaced and rebuild the whole view.
 ReadonlyObservableList<Slot> view = container.ActiveSlots;
-view.OnItemAdded   += (slot, index) => SpawnSlotView(slot);
-view.OnItemRemoved += (slot, index) => DespawnSlotView(slot);
+view.OnContentsReplaced += () =>
+{
+    DespawnAllSlotViews();
+    foreach (Slot slot in view)
+        SpawnSlotView(slot);
+};
 
 // Add / remove items
 if (container.CanAdd(item))
@@ -224,7 +232,7 @@ public class ItemAmountSorter : Sorter<int>
 
 ### LayeredSorter
 
-`LayeredSorter : Sorter` — chains child sorters sequentially (first sorter's `Sort`, then each subsequent sorter's `ThenBy`). Active child sorters are resolved at inject time; additional sorters can be added at runtime.
+`LayeredSorter : Sorter` — chains child sorters sequentially (first sorter's `Sort`, then each subsequent sorter's `ThenBy`). Child sorters are resolved from the DI context as `IEnumerable<Sorter>` at inject time; additional sorters can be added at runtime. `IsActive` returns `true` only when at least one child sorter is active.
 
 | Member | Notes |
 |---|---|
@@ -234,7 +242,7 @@ public class ItemAmountSorter : Sorter<int>
 
 ### RadioSorter
 
-`RadioSorter : Sorter` — at most one child sorter is active at a time. `IsActive` is `false` until `Activate` is called.
+`RadioSorter : Sorter` — at most one child sorter is active at a time. Child sorters are resolved from the DI context as `IEnumerable<Sorter>` at inject time; additional sorters can be added at runtime. `IsActive` is `false` until `Activate` is called.
 
 | Member | Notes |
 |---|---|
@@ -251,6 +259,11 @@ Bind these types in the same DI context (typically a `SceneContext`). `Filter` a
 
 ```csharp
 // Required
+// The slot list must be bound as both its readonly interface (used by Container)
+// and its concrete type (used by ContainerAccessor).
+var slots = new ObservableList<Slot>();
+binder.Bind<ReadonlyObservableList<Slot>>().And<ObservableList<Slot>>().ToInstance(slots);
+
 binder.BindToNewSelf<Container>().AsSingle();
 binder.Bind<ContainerAccessor>().ToNew<EndlessContainerAccessor>().AsSingle();
 binder.Bind<SlotProvider>().ToNew<SlotCreator>().AsSingle();

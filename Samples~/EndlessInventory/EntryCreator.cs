@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Calluna.DI;
 using UnityEngine;
@@ -24,18 +23,20 @@ namespace Calluna.Inventory.Samples.EndlessInventory
 
         public void Initialize()
         {
-            _container.ActiveSlots.OnItemAdded += OnItemAdded;
-            _container.ActiveSlots.OnItemRemoved += OnItemRemoved;
-            _container.ActiveSlots.OnItemReplaced += OnItemReplaced;
+            _container.ActiveSlots.OnContentsReplaced += OnContentsReplaced;
             CreateSlots();
         }
 
         public void Clean()
         {
-            _container.ActiveSlots.OnItemAdded -= OnItemAdded;
-            _container.ActiveSlots.OnItemRemoved -= OnItemRemoved;
-            _container.ActiveSlots.OnItemReplaced -= OnItemReplaced;
-            ClearSlot();
+            _container.ActiveSlots.OnContentsReplaced -= OnContentsReplaced;
+            ClearSlots();
+        }
+
+        private void OnContentsReplaced()
+        {
+            ClearSlots();
+            CreateSlots();
         }
 
         private void CreateSlots()
@@ -47,7 +48,7 @@ namespace Calluna.Inventory.Samples.EndlessInventory
             }
         }
 
-        private void ClearSlot()
+        private void ClearSlots()
         {
             foreach (InventoryEntry item in _entries)
             {
@@ -55,25 +56,6 @@ namespace Calluna.Inventory.Samples.EndlessInventory
             }
 
             _entries.Clear();
-        }
-
-        private void OnItemAdded(Slot item, int index)
-        {
-            InventoryEntry entry = _itemPool.Request(item, _prefabInstantiationArguments);
-            _entries.Insert(index, entry);
-        }
-
-        private void OnItemRemoved(Slot item, int index)
-        {
-            InventoryEntry entry = _entries[index];
-            _entries.RemoveAt(index);
-            _itemPool.Return(entry);
-        }
-
-        private void OnItemReplaced(Slot nextitem, Slot formeritem, int index)
-        {
-            OnItemRemoved(formeritem, index);
-            OnItemAdded(nextitem, index);
         }
     }
 }
