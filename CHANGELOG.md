@@ -1,3 +1,17 @@
+## [1.1.3] - 2026-05-14
+
+### Fixed
+- `Container.Clean()` and `Container.UpdateActiveSlots()` now use `if (_scheduler)` instead of `_scheduler?.CancelAll()` / `_scheduler?.Cancel()`. The C# null-conditional operator does not invoke Unity's `==` override, so a destroyed `MonoBehaviour`-based `UpdateScheduler` would pass the `?.` check and throw on access. The `if` form uses Unity's implicit bool conversion, which correctly treats destroyed objects as null.
+
+### Changed
+- `Container.OnSlotChanged()`, `OnSlotReplaced()`, and the initial `Initialize()` call now route through `ScheduleActiveSlotsUpdate()` instead of calling `UpdateActiveSlots()` directly. When an `UpdateScheduler` is present, slot changes and the initial `ActiveSlots` build are now also deferred to end-of-frame, consistent with filter- and sorter-triggered rebuilds.
+- `ContainerChangedSignal.OnChanged` now triggers `ScheduleActiveSlotsUpdate()` instead of `UpdateActiveSlots()`, so signal-driven rebuilds are also deferred when a scheduler is present.
+
+### Performance
+- `_scheduleUpdateActiveSlotsAction` cached delegate added alongside the existing `_updateActiveSlotsAction` — eliminates a delegate allocation on each event subscribe/unsubscribe call for `ScheduleActiveSlotsUpdate`.
+
+---
+
 ## [1.1.2] - 2026-05-13
 
 ### Fixed

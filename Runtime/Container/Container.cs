@@ -28,10 +28,12 @@ namespace Calluna.Inventory
         // Cached delegate — reused every time ScheduleActiveSlotsUpdate passes it to
         // ScheduleOnce, preventing a new Action allocation on each filter/sorter change.
         private readonly Action _updateActiveSlotsAction;
+        private readonly Action _scheduleUpdateActiveSlotsAction;
 
         public Container()
         {
             _updateActiveSlotsAction = UpdateActiveSlots;
+            _scheduleUpdateActiveSlotsAction = ScheduleActiveSlotsUpdate;
         }
 
         void Injectable.Inject(Resolver resolver)
@@ -46,13 +48,13 @@ namespace Calluna.Inventory
 
         void Initializable.Initialize()
         {
-            UpdateActiveSlots();
+            ScheduleActiveSlotsUpdate();
             if (_filter != null)
-                _filter.OnChanged += ScheduleActiveSlotsUpdate;
+                _filter.OnChanged += _scheduleUpdateActiveSlotsAction;
             if (_sorter != null)
-                _sorter.OnChanged += ScheduleActiveSlotsUpdate;
+                _sorter.OnChanged += _scheduleUpdateActiveSlotsAction;
             if (_signal != null)
-                _signal.OnChanged += UpdateActiveSlots;
+                _signal.OnChanged += _scheduleUpdateActiveSlotsAction;
             Slots.OnItemRemoved += OnSlotChanged;
             Slots.OnItemAdded += OnSlotChanged;
             Slots.OnItemReplaced += OnSlotReplaced;
@@ -60,13 +62,14 @@ namespace Calluna.Inventory
 
         void Cleanable.Clean()
         {
-            _scheduler?.CancelAll();
+            if(_scheduler)
+                _scheduler.CancelAll();
             if (_filter != null)
-                _filter.OnChanged -= ScheduleActiveSlotsUpdate;
+                _filter.OnChanged -= _scheduleUpdateActiveSlotsAction;
             if (_sorter != null)
-                _sorter.OnChanged -= ScheduleActiveSlotsUpdate;
+                _sorter.OnChanged -= _scheduleUpdateActiveSlotsAction;
             if (_signal != null)
-                _signal.OnChanged -= UpdateActiveSlots;
+                _signal.OnChanged -= _scheduleUpdateActiveSlotsAction;
             Slots.OnItemRemoved -= OnSlotChanged;
             Slots.OnItemAdded -= OnSlotChanged;
             Slots.OnItemReplaced -= OnSlotReplaced;
@@ -82,7 +85,8 @@ namespace Calluna.Inventory
 
         private void UpdateActiveSlots()
         {
-            _scheduler?.Cancel(SchedulerId);
+            if (_scheduler)
+                _scheduler.Cancel(SchedulerId);
             _activeSlots.OverrideWith(ApplySorting(ApplyFilters(Slots)));
         }
 
@@ -96,8 +100,8 @@ namespace Calluna.Inventory
             return _sorter is { IsActive: true } ? _sorter.Sort(slots) : slots;
         }
 
-        private void OnSlotChanged(Slot slot, int index) => UpdateActiveSlots();
+        private void OnSlotChanged(Slot slot, int index) => ScheduleActiveSlotsUpdate();
 
-        private void OnSlotReplaced(Slot newSlot, Slot formerSlot, int index) => UpdateActiveSlots();
+        private void OnSlotReplaced(Slot newSlot, Slot formerSlot, int index) => ScheduleActiveSlotsUpdate();
     }
 }
