@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace Calluna.Inventory.Tests
@@ -9,6 +10,44 @@ namespace Calluna.Inventory.Tests
 
         private sealed class NameProperty : ItemProperty { }
         private sealed class AmountProperty : ItemProperty { }
+
+        // ── GetProperty ─────────────────────────────────────────────────────
+
+        [Test]
+        [Description("GetProperty<T> when property present => returns the instance?")]
+        public void Item_GetProperty_Present_ReturnsProperty()
+        {
+            var item = new Item();
+            var prop = new NameProperty();
+            item.Add(prop);
+
+            NameProperty result = item.GetProperty<NameProperty>();
+
+            Assert.AreSame(prop, result);
+        }
+
+        [Test]
+        [Description("GetProperty<T> when property absent => throws KeyNotFoundException?")]
+        public void Item_GetProperty_Absent_ThrowsKeyNotFoundException()
+        {
+            var item = new Item();
+
+            Assert.Throws<KeyNotFoundException>(() => item.GetProperty<NameProperty>());
+        }
+
+        [Test]
+        [Description("GetProperty<T> returns the correct type among multiple properties?")]
+        public void Item_GetProperty_MultipleProperties_ReturnsCorrectType()
+        {
+            var item = new Item();
+            var name = new NameProperty();
+            var amount = new AmountProperty();
+            item.Add(name);
+            item.Add(amount);
+
+            Assert.AreSame(name, item.GetProperty<NameProperty>());
+            Assert.AreSame(amount, item.GetProperty<AmountProperty>());
+        }
 
         // ── TryGetProperty ───────────────────────────────────────────────────
 

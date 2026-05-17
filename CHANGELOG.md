@@ -1,3 +1,10 @@
+## [1.1.4] - 2026-05-17
+
+### Added
+- `Item.GetProperty<TProperty>()` — non-throwing companion to `TryGetProperty<TProperty>`. Uses the dictionary indexer directly (single O(1) lookup, no branch) and throws `KeyNotFoundException` if the property is absent. Both methods are allocation-free on the happy path and suitable for per-frame calls.
+
+---
+
 ## [1.1.3] - 2026-05-14
 
 ### Fixed

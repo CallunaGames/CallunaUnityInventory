@@ -22,9 +22,15 @@ Item : Injectable
 var item = new Item();
 item.Add(new ItemName { Name = { Value = "Iron Sword" } });
 
-// Read a property
-if (item.TryGetProperty(out ItemName itemName))
-    Debug.Log(itemName.Name.Value);
+// Read a property — two options:
+// Use GetProperty when the property is always expected to be present.
+// Throws KeyNotFoundException if the type is absent.
+ItemName itemName = item.GetProperty<ItemName>();
+Debug.Log(itemName.Name.Value);
+
+// Use TryGetProperty when absence is a valid state (no exception, no out-variable allocation).
+if (item.TryGetProperty(out ItemName found))
+    Debug.Log(found.Name.Value);
 
 // Remove a property
 item.Remove<ItemName>();

@@ -16,6 +16,11 @@ namespace Calluna.Inventory
                 property.SetSignal(_signal);
         }
 
+        public TProperty GetProperty<TProperty>() where TProperty : ItemProperty
+        {
+            return (TProperty)_properties[typeof(TProperty)];
+        }
+
         public bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ItemProperty
         {
             bool found = _properties.TryGetValue(typeof(TProperty), out ItemProperty rawProperty);
