@@ -6,14 +6,17 @@ namespace Calluna.Inventory
 {
     public class Container : Injectable, Initializable, Cleanable
     {
-        private const string SchedulerId = "active_slots";
-
         private ContainerAccessor _accessor;
         private ContainerChangedSignal _signal;
         private UpdateScheduler _scheduler;
 
         public ReadonlyObservableList<Slot> Slots { get; private set; }
 
+        /// <summary>
+        /// The filtered and sorted view of <see cref="Slots"/>. It is updated with the individual
+        /// changes (added, removed, replaced, swapped slots) rather than replaced as a whole, so
+        /// subscribers - e.g. a scroll view - only update what actually changed.
+        /// </summary>
         public ReadonlyObservableList<Slot> ActiveSlots => _activeSlots;
         private readonly ObservableList<Slot> _activeSlots = new ObservableList<Slot>();
 
@@ -24,9 +27,10 @@ namespace Calluna.Inventory
 
         private Filter _filter;
         private Sorter _sorter;
+        private IDisposable _slotsSubscription;
 
-        // Cached delegate — reused every time ScheduleActiveSlotsUpdate passes it to
-        // ScheduleOnce, preventing a new Action allocation on each filter/sorter change.
+        // Cached delegates: reused for every (un)subscribe and every ScheduleOnce, which also keys
+        // the scheduled update by this delegate - so several changes in a frame update once.
         private readonly Action _updateActiveSlotsAction;
         private readonly Action _scheduleUpdateActiveSlotsAction;
 
@@ -55,30 +59,29 @@ namespace Calluna.Inventory
                 _sorter.OnChanged += _scheduleUpdateActiveSlotsAction;
             if (_signal != null)
                 _signal.OnChanged += _scheduleUpdateActiveSlotsAction;
-            Slots.OnItemRemoved += OnSlotChanged;
-            Slots.OnItemAdded += OnSlotChanged;
-            Slots.OnItemReplaced += OnSlotReplaced;
+            // Any change - including a swap, Clear or OverrideWith of the slots - can change the view.
+            _slotsSubscription = Slots.SubscribeAny(_scheduleUpdateActiveSlotsAction);
         }
 
         void Cleanable.Clean()
         {
-            if(_scheduler)
-                _scheduler.CancelAll();
+            // Only this container's update - the scheduler may be shared with other classes.
+            if (_scheduler)
+                _scheduler.Cancel(_updateActiveSlotsAction);
             if (_filter != null)
                 _filter.OnChanged -= _scheduleUpdateActiveSlotsAction;
             if (_sorter != null)
                 _sorter.OnChanged -= _scheduleUpdateActiveSlotsAction;
             if (_signal != null)
                 _signal.OnChanged -= _scheduleUpdateActiveSlotsAction;
-            Slots.OnItemRemoved -= OnSlotChanged;
-            Slots.OnItemAdded -= OnSlotChanged;
-            Slots.OnItemReplaced -= OnSlotReplaced;
+            _slotsSubscription?.Dispose();
+            _slotsSubscription = null;
         }
 
         private void ScheduleActiveSlotsUpdate()
         {
             if (_scheduler != null)
-                _scheduler.ScheduleOnce(SchedulerId, _updateActiveSlotsAction);
+                _scheduler.ScheduleOnce(_updateActiveSlotsAction);
             else
                 UpdateActiveSlots();
         }
@@ -86,8 +89,8 @@ namespace Calluna.Inventory
         private void UpdateActiveSlots()
         {
             if (_scheduler)
-                _scheduler.Cancel(SchedulerId);
-            _activeSlots.OverrideWith(ApplySorting(ApplyFilters(Slots)));
+                _scheduler.Cancel(_updateActiveSlotsAction);
+            _activeSlots.OverrideWithEvents(ApplySorting(ApplyFilters(Slots)));
         }
 
         private IEnumerable<Slot> ApplyFilters(IEnumerable<Slot> slots)
@@ -99,9 +102,5 @@ namespace Calluna.Inventory
         {
             return _sorter is { IsActive: true } ? _sorter.Sort(slots) : slots;
         }
-
-        private void OnSlotChanged(Slot slot, int index) => ScheduleActiveSlotsUpdate();
-
-        private void OnSlotReplaced(Slot newSlot, Slot formerSlot, int index) => ScheduleActiveSlotsUpdate();
     }
 }

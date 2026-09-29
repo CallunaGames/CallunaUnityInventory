@@ -28,11 +28,18 @@ namespace Calluna.Inventory
             return found;
         }
 
+        /// <summary>
+        /// Adds <paramref name="property"/> under its runtime type - <see cref="GetProperty{TProperty}"/>
+        /// finds it by exactly that type, also when it was added through a variable of a base type.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">A property of the same type is already added.</exception>
         public void Add<TProperty>(TProperty property) where TProperty : ItemProperty
         {
-            Type type = typeof(TProperty);
+            if (property == null)
+                throw new ArgumentNullException(nameof(property));
+            Type type = property.GetType();
             if (_properties.ContainsKey(type))
-                throw new Exception($"Property {type.FullName} is already added");
+                throw new InvalidOperationException($"Property {type.FullName} is already added");
             property.SetSignal(_signal);
             _properties.Add(type, property);
         }

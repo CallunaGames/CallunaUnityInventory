@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System;
+using System.Linq;
 
 namespace Calluna.Inventory
 {
@@ -13,6 +14,7 @@ namespace Calluna.Inventory
 
         public override bool CanAdd(Item item) => true;
 
+        /// <exception cref="InvalidOperationException"><paramref name="item"/> isn't in the container.</exception>
         public override void Remove(Item item)
         {
             Slot slot = _slots.First(s => s.Item.Value == item);
@@ -22,8 +24,10 @@ namespace Calluna.Inventory
 
         public override bool CanRemove(Item item) => _slots.Any(s => s.Item.Value == item);
 
+        [Obsolete("Not used by Container. Will be removed in 2.0.0.")]
         public override bool CanSetAt(Item item, int index) => index < _slots.Count;
 
+        [Obsolete("Not used by Container. Will be removed in 2.0.0.")]
         public override Item this[int index]
         {
             get => _slots[index].Item.Value;
