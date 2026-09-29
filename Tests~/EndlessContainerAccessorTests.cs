@@ -1,5 +1,8 @@
 using NUnit.Framework;
 
+// Also covers the obsolete CanSetAt and indexer until their removal in 2.0.0.
+#pragma warning disable CS0618
+
 namespace Calluna.Inventory.Tests
 {
     /// <summary>

@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Calluna.DI;
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Calluna.Inventory.Tests
 {
@@ -53,9 +56,10 @@ namespace Calluna.Inventory.Tests
 
         // ── helpers ──────────────────────────────────────────────────────────────
 
-        private static Container BuildContainer(Filter filter = null, Sorter sorter = null)
+        private static Container BuildContainer(Filter filter = null, Sorter sorter = null,
+            ObservableList<Slot> slots = null, ContainerChangedSignal signal = null, UpdateScheduler scheduler = null)
         {
-            var slots = new ObservableList<Slot>();
+            slots ??= new ObservableList<Slot>();
             var accessor = new TestEndlessContainerAccessor(slots, new SlotCreator());
 
             var resolver = new TestResolver();
@@ -64,6 +68,8 @@ namespace Calluna.Inventory.Tests
             resolver.Bind<ContainerAccessor>(accessor);
             if (filter != null) resolver.Bind<Filter>(filter);
             if (sorter != null) resolver.Bind<Sorter>(sorter);
+            if (signal != null) resolver.Bind<ContainerChangedSignal>(signal);
+            if (scheduler != null) resolver.Bind<UpdateScheduler>(scheduler);
 
             var container = new Container();
             ((Injectable)container).Inject(resolver);
@@ -260,6 +266,127 @@ namespace Calluna.Inventory.Tests
 
             Assert.AreEqual(0, container.ActiveSlots.Count);
             Assert.AreEqual(0, container.Slots.Count);
+        }
+
+        // ── Reacting to every kind of slot change ────────────────────────────────
+
+        [Test]
+        public void Container_SlotsSwapped_ActiveSlotsFollowOrder()
+        {
+            var slots = new ObservableList<Slot>();
+            Container container = BuildContainer(slots: slots);
+            container.Add(MakeNamedItem("A"));
+            container.Add(MakeNamedItem("B"));
+
+            slots.Swap(0, 1);
+
+            Assert.AreEqual("B", GetItemName(container.ActiveSlots[0]));
+            Assert.AreEqual("A", GetItemName(container.ActiveSlots[1]));
+        }
+
+        [Test]
+        public void Container_SlotsCleared_ActiveSlotsEmpty()
+        {
+            var slots = new ObservableList<Slot>();
+            Container container = BuildContainer(slots: slots);
+            container.Add(MakeNamedItem("A"));
+            container.Add(MakeNamedItem("B"));
+
+            slots.Clear();
+
+            Assert.AreEqual(0, container.ActiveSlots.Count);
+        }
+
+        // ── Granular ActiveSlots changes ─────────────────────────────────────────
+
+        [Test]
+        public void Container_ItemAdded_ActiveSlotsReportAddedNotReset()
+        {
+            Container container = BuildContainer();
+            container.Add(MakeNamedItem("A"));
+            List<ListChangeKind> changes = new List<ListChangeKind>();
+            container.ActiveSlots.Subscribe(change => changes.Add(change.Kind));
+
+            container.Add(MakeNamedItem("B"));
+
+            CollectionAssert.AreEqual(new[] { ListChangeKind.Added }, changes);
+        }
+
+        [Test]
+        public void Container_ItemRenamedWithSorter_ActiveSlotsReportMoveNotReset()
+        {
+            var signal = new ContainerChangedSignal();
+            Container container = BuildContainer(sorter: new NameSorter(), signal: signal);
+            Item alice = MakeNamedItem("Alice");
+            ((Injectable)alice).Inject(ResolverWith(signal));
+            container.Add(alice);
+            container.Add(MakeNamedItem("Bob"));
+            List<ListChangeKind> changes = new List<ListChangeKind>();
+            container.ActiveSlots.Subscribe(change => changes.Add(change.Kind));
+
+            alice.GetProperty<ItemName>().Name.Value = "Zoe";
+
+            Assert.AreEqual("Bob", GetItemName(container.ActiveSlots[0]));
+            Assert.AreEqual("Zoe", GetItemName(container.ActiveSlots[1]));
+            CollectionAssert.DoesNotContain(changes, ListChangeKind.Reset);
+            CollectionAssert.IsNotEmpty(changes);
+        }
+
+        // ── UpdateScheduler ──────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Container_WithScheduler_UpdatesOncePerFrame()
+        {
+            GameObject host = new GameObject("scheduler");
+            try
+            {
+                UpdateScheduler scheduler = host.AddComponent<UpdateScheduler>();
+                Container container = BuildContainer(scheduler: scheduler);
+                yield return null; // initial update
+                int changes = 0;
+                container.ActiveSlots.SubscribeAny(() => changes++);
+
+                container.Add(MakeNamedItem("A"));
+                container.Add(MakeNamedItem("B"));
+                Assert.AreEqual(0, container.ActiveSlots.Count, "Deferred to the end of the frame.");
+                yield return null;
+
+                Assert.AreEqual(2, container.ActiveSlots.Count);
+                Assert.AreEqual(2, changes);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Container_Clean_KeepsOtherCallbacksOfSharedScheduler()
+        {
+            GameObject host = new GameObject("scheduler");
+            try
+            {
+                UpdateScheduler scheduler = host.AddComponent<UpdateScheduler>();
+                Container container = BuildContainer(scheduler: scheduler);
+                bool otherCalled = false;
+                scheduler.ScheduleOnce(() => otherCalled = true);
+
+                ((Cleanable)container).Clean();
+                yield return null;
+
+                Assert.IsTrue(otherCalled);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        private static Resolver ResolverWith(ContainerChangedSignal signal)
+        {
+            var resolver = new TestResolver();
+            resolver.Bind(signal);
+            return resolver;
         }
     }
 }

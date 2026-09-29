@@ -1,3 +1,25 @@
+## [1.2.0] - 2026-09-29
+
+Requires `com.calluna.core` 1.7.0. Uses only APIs that remain in core 2.0.0.
+
+### Changed
+- `Container.ActiveSlots` — updated with its individual changes (`OverrideWithEvents`: slots added, removed, replaced, swapped) instead of being replaced as a whole. Subscribers such as scroll views only update what changed; a subscriber reacting only to the reset of `ActiveSlots` has to subscribe to every change (e.g. `SubscribeAny`) instead.
+- `Container` — reacts to every change of `Slots`, including a swap, `Clear` and `OverrideWith` of the list. Before, only added, removed and replaced slots updated `ActiveSlots`.
+- `Container` — schedules its update on the `UpdateScheduler` by its (cached) callback instead of the string id `"active_slots"`.
+- `Item.Add` — stores a property under its runtime type instead of the type argument, so a property added through a variable of a base type is found by its concrete type. Throws `InvalidOperationException` (was `Exception`) for a duplicate type and `ArgumentNullException` for `null`.
+- `ItemName` — subscribes its own `Name` in the constructor; no longer implements `Initializable` / `Cleanable`. Changing the name now notifies the `ContainerChangedSignal` also for an `ItemName` not created by DI.
+- `package.json` — minimum Unity version corrected to `6000.0.33f1`; dependencies `com.calluna.core` 1.7.0, `com.calluna.di` 1.5.2.
+- README — property lifecycle (own observables subscribed in the constructor, DI lifecycle only for DI-created properties), `ActiveSlots` subscription example, `EndlessContainerAccessor.Remove` contract.
+- Sample `EntryCreator` — updates its entries per change instead of rebuilding them.
+
+### Deprecated (removal in 2.0.0)
+- `ContainerAccessor.CanSetAt` and the indexer `this[int]` — not used by `Container`. They are no longer abstract (the base throws `NotSupportedException`), so custom accessors don't have to implement them.
+
+### Fixed
+- `Container.Clean` — cancels only its own pending update instead of every callback of the `UpdateScheduler` (`CancelAll`), which also dropped other classes' callbacks on a shared scheduler.
+
+---
+
 ## [1.1.4] - 2026-05-17
 
 ### Added

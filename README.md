@@ -6,14 +6,16 @@ A generic, DI-aware inventory system for Unity. Items are property bags; filteri
 
 ## Item
 
-`Item` is a property bag. All item data is stored as typed `ItemProperty` subclasses. `Item` participates in the DI lifecycle (`Injectable`) so that injected `ContainerChangedSignal` is propagated to every property.
+`Item` is a property bag. All item data is stored as typed `ItemProperty` subclasses, one per type. `Item` participates in the DI lifecycle (`Injectable`) so that injected `ContainerChangedSignal` is propagated to every property.
 
 ```
 Item : Injectable
 └─ Dictionary<Type, ItemProperty>
-   ├─ ItemName        : ItemProperty, Initializable, Cleanable  (built-in)
+   ├─ ItemName        : ItemProperty  (built-in)
    └─ (your custom ItemProperty subclasses...)
 ```
+
+A property is stored under its runtime type and found by exactly that type: `Add(property)` with a variable of a base type still registers the concrete type, and `GetProperty<Base>()` doesn't find a subclass instance. Adding a second property of the same type throws an `InvalidOperationException`.
 
 **Usage**
 
@@ -40,21 +42,22 @@ item.Remove<ItemName>();
 
 `ItemProperty` is the abstract base for all item data. Subclass it to add custom data. Call `NotifyChanged()` inside your subclass whenever a value changes so the container's `ActiveSlots` stays up to date. `NotifyChanged()` is `protected virtual`.
 
+Subscribe to the property's **own** observables in its constructor. They live exactly as long as the property, so the subscription never has to be removed, and the property works the same with or without DI:
+
 ```csharp
-public class ItemAmount : ItemProperty, Initializable, Cleanable
+public class ItemAmount : ItemProperty
 {
     public Observable<int> Amount { get; } = new Observable<int>();
 
-    void Initializable.Initialize() => Amount.OnChanged += NotifyChanged;
-    void Cleanable.Clean()          => Amount.OnChanged -= NotifyChanged;
+    public ItemAmount() => Amount.OnChanged += NotifyChanged;
 }
 ```
 
-`Initializable` and `Cleanable` are optional on custom properties — implement them only when you need to subscribe/unsubscribe observables or perform setup and teardown.
+`Injectable`, `Initializable` and `Cleanable` on a property are only called when the property itself is created by DI (e.g. bound in a scope and resolved by an item factory) - a property created with `new` and added to an item never receives them. Use them only for dependencies from outside the property that DI provides.
 
 ### ItemName
 
-`ItemName : ItemProperty, Initializable, Cleanable` — built-in property that stores a display name.
+`ItemName : ItemProperty` — built-in property that stores a display name.
 
 | Member | Type | Notes |
 |---|---|---|
@@ -69,29 +72,30 @@ public class ItemAmount : ItemProperty, Initializable, Cleanable
 | Member | Type | Notes |
 |---|---|---|
 | `Slots` | `ReadonlyObservableList<Slot>` | All slots, unfiltered and unsorted |
-| `ActiveSlots` | `ReadonlyObservableList<Slot>` | Filtered + sorted projection, rebuilt reactively |
+| `ActiveSlots` | `ReadonlyObservableList<Slot>` | Filtered + sorted projection, updated with the individual changes |
 | `CanAdd(item)` | `bool` | Delegates to the injected `ContainerAccessor` |
 | `CanRemove(item)` | `bool` | Delegates to the injected `ContainerAccessor` |
 | `Add(item)` | `void` | Delegates to the injected `ContainerAccessor` |
 | `Remove(item)` | `void` | Delegates to the injected `ContainerAccessor` |
 
-`ActiveSlots` is rebuilt whenever `Filter.OnChanged`, `Sorter.OnChanged`, `ContainerChangedSignal.OnChanged`, or the raw `Slots` list changes.
+`ActiveSlots` is updated whenever `Filter.OnChanged`, `Sorter.OnChanged`, `ContainerChangedSignal.OnChanged` fires, or the raw `Slots` list changes in any way (including a swap, `Clear` or `OverrideWith`).
 
-When `Filter.OnChanged` or `Sorter.OnChanged` fires, the rebuild is routed through `ScheduleActiveSlotsUpdate`. If an `UpdateScheduler` (from `com.calluna.core`) is injected, the rebuild is deferred to end-of-frame via `UpdateScheduler.ScheduleOnce`. Multiple filter or sorter changes within the same frame are therefore collapsed into a single `ActiveSlots` rebuild. If no `UpdateScheduler` is bound, the rebuild happens immediately and synchronously, preserving the original behaviour.
+The update doesn't replace `ActiveSlots` as a whole: it reports the individual changes - slots added, removed, replaced or swapped (`OverrideWithEvents`). An item that becomes visible or moves in the sort order is therefore one or two changes, not a rebuild of every view.
+
+If an `UpdateScheduler` (from `com.calluna.core`) is injected, the update is deferred to the end of the frame via `UpdateScheduler.ScheduleOnce`, so several changes within a frame cause a single update. If no `UpdateScheduler` is bound, the update happens immediately. The scheduler may be shared: cleaning the container only cancels its own pending update.
 
 **Usage**
 
 ```csharp
-// Expose the readonly view to UI code.
-// ActiveSlots is rebuilt via OverrideWith, which fires OnContentsReplaced once
-// rather than per-item events. React to OnContentsReplaced and rebuild the whole view.
+// Expose the readonly view to UI code and update only what changed.
 ReadonlyObservableList<Slot> view = container.ActiveSlots;
-view.OnContentsReplaced += () =>
-{
-    DespawnAllSlotViews();
-    foreach (Slot slot in view)
-        SpawnSlotView(slot);
-};
+IDisposable subscription = view.Subscribe(
+    added:    (slot, index) => SpawnSlotViewAt(slot, index),
+    removed:  (slot, index) => DespawnSlotViewAt(index),
+    replaced: (slot, former, index) => RespawnSlotViewAt(slot, index),
+    swapped:  (slot1, index1, slot2, index2) => SwapSlotViews(index1, index2),
+    reset:    RebuildAllSlotViews);
+// Or, to simply rebuild on every change: view.SubscribeAny(RebuildAllSlotViews);
 
 // Add / remove items
 if (container.CanAdd(item))
@@ -129,14 +133,13 @@ binder.BindToNewSelf<ContainerChangedSignal>().AsSingle();
 |---|---|
 | `CanAdd(item)` | Return `false` to reject an add |
 | `CanRemove(item)` | Return `false` to reject a remove |
-| `CanSetAt(item, index)` | Return `false` to reject a direct set |
 | `Add(item)` | Insert item into the slot list |
 | `Remove(item)` | Remove item from the slot list |
-| `this[int index]` | Get or set the item at a slot index |
+| `CanSetAt(item, index)`, `this[int index]` | **Obsolete** — not used by `Container`; will be removed in 2.0.0 |
 
 ### EndlessContainerAccessor
 
-`EndlessContainerAccessor : ContainerAccessor` — built-in implementation with no capacity limit. `CanAdd` always returns `true`; `CanRemove` returns `true` when the item is present. Slots are allocated and recycled via the injected `SlotProvider`.
+`EndlessContainerAccessor : ContainerAccessor` — built-in implementation with no capacity limit. `CanAdd` always returns `true`; `CanRemove` returns `true` when the item is present. `Remove` throws an `InvalidOperationException` for an item that isn't in the container - check `CanRemove` first when that can happen. Slots are allocated and recycled via the injected `SlotProvider`.
 
 ---
 

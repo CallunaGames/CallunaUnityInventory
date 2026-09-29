@@ -92,13 +92,34 @@ namespace Calluna.Inventory.Tests
         }
 
         [Test]
-        [Description("Add<T> duplicate type => throws Exception?")]
-        public void Item_Add_DuplicateType_ThrowsException()
+        [Description("Add<T> duplicate type => throws InvalidOperationException?")]
+        public void Item_Add_DuplicateType_ThrowsInvalidOperationException()
         {
             var item = new Item();
             item.Add(new NameProperty());
 
-            Assert.Throws<Exception>(() => item.Add(new NameProperty()));
+            Assert.Throws<InvalidOperationException>(() => item.Add(new NameProperty()));
+        }
+
+        [Test]
+        [Description("Add through a base-typed variable => Found by its runtime type?")]
+        public void Item_Add_ThroughBaseType_FoundByRuntimeType()
+        {
+            var item = new Item();
+            ItemProperty property = new NameProperty();
+
+            item.Add(property);
+
+            Assert.IsTrue(item.TryGetProperty(out NameProperty _));
+            Assert.IsFalse(item.TryGetProperty(out ItemProperty _));
+        }
+
+        [Test]
+        [Description("Add null => throws ArgumentNullException?")]
+        public void Item_Add_Null_ThrowsArgumentNullException()
+        {
+            var item = new Item();
+            Assert.Throws<ArgumentNullException>(() => item.Add<NameProperty>(null));
         }
 
         // ── Remove ───────────────────────────────────────────────────────────
