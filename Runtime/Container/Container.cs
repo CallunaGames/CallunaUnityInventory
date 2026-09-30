@@ -28,6 +28,7 @@ namespace Calluna.Inventory
         private Filter _filter;
         private Sorter _sorter;
         private IDisposable _slotsSubscription;
+        private IDisposable _filterActiveSubscription;
 
         // Cached delegates: reused for every (un)subscribe and every ScheduleOnce, which also keys
         // the scheduled update by this delegate - so several changes in a frame update once.
@@ -54,7 +55,11 @@ namespace Calluna.Inventory
         {
             ScheduleActiveSlotsUpdate();
             if (_filter != null)
+            {
                 _filter.OnChanged += _scheduleUpdateActiveSlotsAction;
+                // ApplyFilters reads IsActive, so switching the filter on or off changes the view too.
+                _filterActiveSubscription = _filter.IsActive.Subscribe(_scheduleUpdateActiveSlotsAction);
+            }
             if (_sorter != null)
                 _sorter.OnChanged += _scheduleUpdateActiveSlotsAction;
             if (_signal != null)
@@ -70,6 +75,8 @@ namespace Calluna.Inventory
                 _scheduler.Cancel(_updateActiveSlotsAction);
             if (_filter != null)
                 _filter.OnChanged -= _scheduleUpdateActiveSlotsAction;
+            _filterActiveSubscription?.Dispose();
+            _filterActiveSubscription = null;
             if (_sorter != null)
                 _sorter.OnChanged -= _scheduleUpdateActiveSlotsAction;
             if (_signal != null)

@@ -1,3 +1,14 @@
+## [1.2.1] - 2026-09-30
+
+### Fixed
+- `Container` - reacts to its filter's `IsActive`. Switching the filter on or off directly (not through a `FilterGroup`, which forwards its children's `IsActive` as `OnChanged`) left `ActiveSlots` stale until the next other change. Existing since 1.1.x.
+- `NameFilter` - matches every item while no search text is set. `ApplyTo` threw an `ArgumentNullException` (`string.Contains(null)`) when the filter was active without a search text.
+
+### Added
+- `ContainerConsistencyTests` - random sequences of slot, name, filter and sort changes, checked after every change (and batched per frame with an `UpdateScheduler`): `ActiveSlots` must equal the filtered and sorted slots, and a subscriber applying only the reported changes must reproduce `ActiveSlots` exactly.
+
+---
+
 ## [1.2.0] - 2026-09-29
 
 Requires `com.calluna.core` 1.7.0. Uses only APIs that remain in core 2.0.0.

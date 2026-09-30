@@ -1,12 +1,12 @@
 {
   "name": "com.calluna.inventory",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "displayName": "Calluna Unity Inventory",
   "description": "A generic Unity inventory system",
   "unity": "6000.0",
   "unityRelease": "33f1",
   "documentationUrl": "https://github.com/CallunaGames/CallunaUnityInventory",
-  "changelogUrl": "https://github.com/CallunaGames/CallunaUnityInventory/compare/v1.1.4...v1.2.0",
+  "changelogUrl": "https://github.com/CallunaGames/CallunaUnityInventory/compare/v1.2.0...v1.2.1",
   "licensesUrl": "",
   "dependencies": {
     "com.calluna.core": "1.7.0",
